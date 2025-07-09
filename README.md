@@ -47,8 +47,8 @@
    ```
 
 4. **访问系统**
-   - 前端界面: http://localhost:8000
-   - API文档: http://localhost:8000/api/health
+   - 前端界面: http://localhost:8001 (默认端口，可在.env中修改HOST_PORT)
+   - API文档: http://localhost:8001/api/health
 
 ### 方式二：本地开发
 

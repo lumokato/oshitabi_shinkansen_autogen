@@ -143,19 +143,43 @@ start_services() {
 # 检查服务状态
 check_services() {
     log_info "检查服务状态..."
-    
+
     # 等待服务启动
-    sleep 10
-    
-    # 检查健康状态
-    if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
-        log_success "服务运行正常"
-        log_info "访问地址: http://localhost:8000"
-    else
-        log_error "服务启动失败，请检查日志"
-        docker-compose -f "$COMPOSE_FILE" logs
-        exit 1
-    fi
+    log_info "等待服务启动..."
+    sleep 15
+
+    # 检查容器状态
+    log_info "检查容器状态..."
+    docker-compose -f "$COMPOSE_FILE" ps
+
+    # 多次尝试健康检查
+    local max_attempts=6
+    local attempt=1
+
+    # 获取宿主机端口
+    local host_port=${HOST_PORT:-8001}
+
+    while [ $attempt -le $max_attempts ]; do
+        log_info "健康检查尝试 $attempt/$max_attempts..."
+
+        if curl -f http://localhost:$host_port/api/health > /dev/null 2>&1; then
+            log_success "服务运行正常"
+            log_info "访问地址: http://localhost:$host_port"
+            return 0
+        fi
+
+        if [ $attempt -lt $max_attempts ]; then
+            log_warning "健康检查失败，等待5秒后重试..."
+            sleep 5
+        fi
+
+        attempt=$((attempt + 1))
+    done
+
+    log_error "服务启动失败，请检查日志"
+    log_info "显示最近的日志："
+    docker-compose -f "$COMPOSE_FILE" logs --tail=50
+    exit 1
 }
 
 # 显示日志
@@ -189,14 +213,17 @@ main() {
             check_services
             ;;
         "stop")
+            check_docker
             stop_services
             ;;
         "restart")
+            check_docker
             stop_services
             start_services
             check_services
             ;;
         "logs")
+            check_docker
             show_logs
             ;;
         "build")
@@ -204,10 +231,12 @@ main() {
             build_image
             ;;
         "cleanup")
+            check_docker
             cleanup
             ;;
         "status")
-            docker-compose -f "${COMPOSE_FILE:-docker-compose.yml}" ps
+            check_docker
+            docker-compose -f "$COMPOSE_FILE" ps
             ;;
         *)
             echo "用法: $0 {start|stop|restart|logs|build|cleanup|status}"

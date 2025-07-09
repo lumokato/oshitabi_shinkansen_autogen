@@ -231,7 +231,7 @@ def get_accounts():
         mgr = get_manager()
 
         # 读取缓存的结果文件
-        results_file = os.path.join('..', 'results', 'multi_account_results.json')
+        results_file = os.path.join('results', 'multi_account_results.json')
         cached_results = {}
 
         if os.path.exists(results_file):
