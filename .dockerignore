@@ -1,0 +1,75 @@
+# Git相关
+.git
+.gitignore
+
+# 环境变量文件（使用.env.example代替）
+.env
+
+# Python缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志文件
+*.log
+
+# 敏感配置文件
+accounts_config.json
+cookies_cache.json
+
+# 结果文件
+results/
+*.html
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Node.js
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+node_modules/
+
+# 保留前端构建结果
+!frontend/dist/
+
+# 备份文件
+backup_files/
+
+# 文档
+*.md
+README.md
+
+# 测试文件
+test_*.py
+*_test.py

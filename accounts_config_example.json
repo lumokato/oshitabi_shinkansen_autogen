@@ -1,0 +1,22 @@
+{
+  "accounts": {
+    "user1": {
+      "username": "your_username_1",
+      "password": "your_password_1",
+      "display_name": "用户1",
+      "enabled": true
+    },
+    "user2": {
+      "username": "your_username_2", 
+      "password": "your_password_2",
+      "display_name": "用户2",
+      "enabled": true
+    },
+    "user3": {
+      "username": "your_username_3",
+      "password": "your_password_3", 
+      "display_name": "用户3",
+      "enabled": false
+    }
+  }
+}

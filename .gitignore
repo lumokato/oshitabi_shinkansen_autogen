@@ -1,0 +1,20 @@
+# 环境变量文件
+.env
+__pycache__/
+
+# 敏感配置文件
+accounts_config.json
+
+# 但保留示例文件
+!accounts_config_example.json
+
+# 结果文件
+results/
+
+
+# Node.js (前端)
+node_modules/
+
+# Docker
+docker-compose.yml
+

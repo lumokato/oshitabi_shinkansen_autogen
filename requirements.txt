@@ -1,0 +1,11 @@
+# 前端自动化依赖
+selenium
+webdriver-manager
+
+# 后端API依赖
+flask
+flask-cors
+requests
+
+# 环境变量管理
+python-dotenv

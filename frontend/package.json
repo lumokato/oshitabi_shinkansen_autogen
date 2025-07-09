@@ -1,0 +1,21 @@
+{
+  "name": "riding-record-manager",
+  "version": "1.0.0",
+  "description": "乘车记录管理系统前端",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vicons/ionicons5": "^0.12.0",
+    "axios": "^1.4.0",
+    "naive-ui": "^2.34.4",
+    "vfonts": "^0.0.3",
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.4.5"
+  }
+}
