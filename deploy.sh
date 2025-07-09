@@ -62,7 +62,13 @@ check_docker() {
 # 创建必要的目录和文件
 setup_environment() {
     log_info "设置环境..."
-    
+
+    # 加载环境变量
+    if [ -f ".env" ]; then
+        export $(grep -v '^#' .env | xargs)
+        log_info "已加载环境变量，宿主机端口: ${HOST_PORT:-8001}"
+    fi
+
     # 创建结果目录
     mkdir -p results
     
@@ -144,6 +150,11 @@ start_services() {
 check_services() {
     log_info "检查服务状态..."
 
+    # 加载环境变量
+    if [ -f ".env" ]; then
+        export $(grep -v '^#' .env | xargs)
+    fi
+
     # 等待服务启动
     log_info "等待服务启动..."
     sleep 15
@@ -158,18 +169,33 @@ check_services() {
 
     # 获取宿主机端口
     local host_port=${HOST_PORT:-8001}
+    log_info "使用端口: $host_port"
 
     while [ $attempt -le $max_attempts ]; do
-        log_info "健康检查尝试 $attempt/$max_attempts..."
+        log_info "健康检查尝试 $attempt/$max_attempts (URL: http://localhost:$host_port/api/health)..."
 
-        if curl -f http://localhost:$host_port/api/health > /dev/null 2>&1; then
+        # 详细的curl输出用于调试
+        local curl_output=$(curl -f http://localhost:$host_port/api/health 2>&1)
+        local curl_exit_code=$?
+
+        if [ $curl_exit_code -eq 0 ]; then
             log_success "服务运行正常"
             log_info "访问地址: http://localhost:$host_port"
             return 0
+        else
+            log_warning "健康检查失败 (退出码: $curl_exit_code)"
+            if [ $attempt -eq 1 ]; then
+                log_info "错误详情: $curl_output"
+                # 检查端口是否在监听
+                if command -v netstat &> /dev/null; then
+                    log_info "端口监听状态:"
+                    netstat -tlnp 2>/dev/null | grep ":$host_port " || log_warning "端口 $host_port 未在监听"
+                fi
+            fi
         fi
 
         if [ $attempt -lt $max_attempts ]; then
-            log_warning "健康检查失败，等待5秒后重试..."
+            log_warning "等待5秒后重试..."
             sleep 5
         fi
 
