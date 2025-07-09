@@ -44,11 +44,16 @@ check_docker() {
     COMPOSE_VERSION=$(docker-compose version --short 2>/dev/null || echo "1.0.0")
     COMPOSE_FILE="docker-compose.yml"
 
-    # 如果版本低于1.27.0，使用legacy配置
-    if [ "$(printf '%s\n' "1.27.0" "$COMPOSE_VERSION" | sort -V | head -n1)" = "1.27.0" ] && [ "$COMPOSE_VERSION" != "1.27.0" ]; then
-        log_warning "检测到较旧的Docker Compose版本 ($COMPOSE_VERSION)，使用兼容配置"
-        COMPOSE_FILE="docker-compose.legacy.yml"
-    fi
+    # 检查是否为已知的旧版本
+    case "$COMPOSE_VERSION" in
+        1.2[0-6].* | 1.1*.* | 1.0*.*)
+            log_warning "检测到较旧的Docker Compose版本 ($COMPOSE_VERSION)，使用兼容配置"
+            COMPOSE_FILE="docker-compose.legacy.yml"
+            ;;
+        *)
+            log_info "使用标准配置文件 (Docker Compose版本: $COMPOSE_VERSION)"
+            ;;
+    esac
 
     export COMPOSE_FILE
     log_success "Docker 环境检查通过，使用配置文件: $COMPOSE_FILE"
