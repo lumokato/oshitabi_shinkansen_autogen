@@ -390,13 +390,7 @@ def check_all_accounts():
             'message': f'检查失败: {str(e)}'
         }), 500
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """健康检查"""
-    return jsonify({
-        'status': 'ok',
-        'timestamp': datetime.now().isoformat()
-    })
+
 
 if __name__ == '__main__':
     print("🚀 启动乘车记录管理系统后端服务...")
