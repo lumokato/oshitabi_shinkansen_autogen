@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  tokaido-automation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/your-username/tokaido-automation:latest
+    container_name: tokaido-automation
+    ports:
+      - "8000:8000"
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=${DEBUG:-false}
+      - CONFIG_FILE=accounts_config.json
+      - RESULTS_DIR=results
+      # 网站URL配置
+      - JR_LOGIN_URL=${JR_LOGIN_URL}
+      - OSHITABI_LOGIN_URL=${OSHITABI_LOGIN_URL}
+      - RIDING_RECORD_URL=${RIDING_RECORD_URL}
+      - VOICE_STORY_URL=${VOICE_STORY_URL}
+      - TARGET_TEXT=${TARGET_TEXT}
+    volumes:
+      # 挂载配置文件（如果存在）
+      - ./accounts_config.json:/app/accounts_config.json:ro
+      # 挂载结果目录（持久化）
+      - ./results:/app/results
+      # 挂载环境变量文件（如果存在）
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+

@@ -35,6 +35,7 @@ docker-compose ps
 - 至少 2GB 内存
 - 至少 1GB 磁盘空间
 
+
 ## ⚙️ 配置
 
 ### 环境变量

@@ -50,9 +50,11 @@ class HeadlessAutomation:
             options.add_argument(f"--user-data-dir={self.temp_dir}")
             options.add_argument("--remote-debugging-port=9225")
             
+            # 启动Chromium浏览器
             self.driver = webdriver.Chrome(options=options)
+            print("✅ 使用 Chromium")
+
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-            
             print(f"✅ 无头浏览器启动成功")
             return True
             

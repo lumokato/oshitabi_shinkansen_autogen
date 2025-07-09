@@ -12,19 +12,17 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装Chrome浏览器
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
+# 安装Chromium浏览器和ChromeDriver（支持所有架构）
+RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装ChromeDriver
-RUN CHROME_DRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE` \
-    && wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
-    && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip \
-    && chmod +x /usr/local/bin/chromedriver
+# 验证安装
+RUN echo "验证浏览器安装..." \
+    && chromium --version \
+    && chromedriver --version \
+    && echo "浏览器验证完成"
 
 # 复制Python依赖文件
 COPY requirements.txt .
@@ -53,7 +51,7 @@ ENV DEBUG=false
 EXPOSE 8000
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
 # 启动命令

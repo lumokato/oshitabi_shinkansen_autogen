@@ -34,13 +34,24 @@ check_docker() {
         log_error "Docker 未安装，请先安装 Docker"
         exit 1
     fi
-    
+
     if ! command -v docker-compose &> /dev/null; then
         log_error "Docker Compose 未安装，请先安装 Docker Compose"
         exit 1
     fi
-    
-    log_success "Docker 环境检查通过"
+
+    # 检查Docker Compose版本并选择配置文件
+    COMPOSE_VERSION=$(docker-compose version --short 2>/dev/null || echo "1.0.0")
+    COMPOSE_FILE="docker-compose.yml"
+
+    # 如果版本低于1.27.0，使用legacy配置
+    if [ "$(printf '%s\n' "1.27.0" "$COMPOSE_VERSION" | sort -V | head -n1)" = "1.27.0" ] && [ "$COMPOSE_VERSION" != "1.27.0" ]; then
+        log_warning "检测到较旧的Docker Compose版本 ($COMPOSE_VERSION)，使用兼容配置"
+        COMPOSE_FILE="docker-compose.legacy.yml"
+    fi
+
+    export COMPOSE_FILE
+    log_success "Docker 环境检查通过，使用配置文件: $COMPOSE_FILE"
 }
 
 # 创建必要的目录和文件
@@ -113,14 +124,14 @@ build_image() {
     fi
 
     log_success "前端已构建，继续Docker构建..."
-    docker-compose build
+    docker-compose -f "$COMPOSE_FILE" build
     log_success "镜像构建完成"
 }
 
 # 启动服务
 start_services() {
     log_info "启动服务..."
-    docker-compose up -d
+    docker-compose -f "$COMPOSE_FILE" up -d
     log_success "服务启动完成"
 }
 
@@ -137,7 +148,7 @@ check_services() {
         log_info "访问地址: http://localhost:8000"
     else
         log_error "服务启动失败，请检查日志"
-        docker-compose logs
+        docker-compose -f "$COMPOSE_FILE" logs
         exit 1
     fi
 }
@@ -145,20 +156,20 @@ check_services() {
 # 显示日志
 show_logs() {
     log_info "显示服务日志..."
-    docker-compose logs -f
+    docker-compose -f "$COMPOSE_FILE" logs -f
 }
 
 # 停止服务
 stop_services() {
     log_info "停止服务..."
-    docker-compose down
+    docker-compose -f "$COMPOSE_FILE" down
     log_success "服务已停止"
 }
 
 # 清理
 cleanup() {
     log_info "清理资源..."
-    docker-compose down -v --rmi all
+    docker-compose -f "$COMPOSE_FILE" down -v --rmi all
     log_success "清理完成"
 }
 
@@ -191,7 +202,7 @@ main() {
             cleanup
             ;;
         "status")
-            docker-compose ps
+            docker-compose -f "${COMPOSE_FILE:-docker-compose.yml}" ps
             ;;
         *)
             echo "用法: $0 {start|stop|restart|logs|build|cleanup|status}"
