@@ -40,9 +40,13 @@ export const checkRidingRecord = async (username, password) => {
  * @returns {Promise} 生成结果
  */
 export const generateRidingRecord = async (username, password) => {
-  const response = await generateApi.post('/riding-record/generate', {
+  console.log('🚀 前端发送生成请求:', { username, password: password ? '***' : '空' })
+  const requestData = {
     username,
     password
-  })
+  }
+  console.log('📤 请求数据:', requestData)
+  const response = await generateApi.post('/riding-record/generate', requestData)
+  console.log('📥 后端响应:', response)
   return response
 }

@@ -15,13 +15,19 @@
     </div>
 
     <!-- 生成进度显示 -->
-    <div v-if="generating" class="progress-card">
-      <h3>🤖 自动化进行中</h3>
+    <div v-if="generating || generateCompleted" class="progress-card">
+      <h3>{{ generating ? '🤖 自动化进行中' : '✅ 自动化已完成' }}</h3>
       <div class="progress-content">
         <div class="progress-text">{{ generateProgress || '准备中...' }}</div>
-        <div class="progress-time">已用时: {{ Math.floor((Date.now() - (generateStartTime || Date.now())) / 1000) }}秒</div>
-        <div class="progress-tip">
+        <div v-if="generating" class="progress-time">已用时: {{ Math.floor((Date.now() - (generateStartTime || Date.now())) / 1000) }}秒</div>
+        <div v-if="generating" class="progress-tip">
           💡 提示：自动化流程需要1-3分钟，请耐心等待...
+        </div>
+        <div v-if="generateCompleted && result" class="progress-result">
+          {{ result }}
+        </div>
+        <div v-if="generateCompleted" class="progress-actions">
+          <button @click="clearProgress" class="clear-button">清除进度</button>
         </div>
       </div>
     </div>
@@ -66,6 +72,7 @@ const result = ref('')
 const queryDetails = ref(null)
 const generateProgress = ref('')
 const generateStartTime = ref(null)
+const generateCompleted = ref(false)  // 新增：标记生成是否完成
 
 // 计算生成按钮文本
 const generateButtonText = computed(() => {
@@ -87,7 +94,10 @@ const checkRecord = async () => {
   }
 
   loading.value = true
-  result.value = ''
+  // 如果没有生成进度，才清除result；否则保留生成结果
+  if (!generateCompleted.value) {
+    result.value = ''
+  }
   queryDetails.value = null
 
   try {
@@ -101,7 +111,12 @@ const checkRecord = async () => {
       message += '\n💾 用户信息已保存到配置文件'
     }
 
-    result.value = message
+    // 如果有生成进度，将查询结果附加到现有结果后面
+    if (generateCompleted.value && result.value) {
+      result.value += '\n\n📋 查询结果：\n' + message
+    } else {
+      result.value = message
+    }
 
     // 保存详细信息
     if (response.hasRecord && response.details) {
@@ -121,6 +136,7 @@ const generateRecord = async () => {
   }
 
   generating.value = true
+  generateCompleted.value = false  // 重置完成状态
   result.value = ''
   generateStartTime.value = Date.now()
 
@@ -148,6 +164,7 @@ const generateRecord = async () => {
     if (response.success) {
       result.value = '🎉 乘车记录生成成功！'
       generateProgress.value = '✅ 生成完成'
+      generateCompleted.value = true  // 标记为完成
 
       // 生成成功后自动查询最新记录
       setTimeout(() => {
@@ -155,15 +172,25 @@ const generateRecord = async () => {
       }, 1000)
     } else {
       result.value = `❌ 生成失败: ${response.message}`
+      generateCompleted.value = true  // 即使失败也标记为完成
     }
   } catch (error) {
     clearInterval(progressInterval)
     result.value = `❌ 生成失败: ${error.message}`
+    generateCompleted.value = true  // 异常时也标记为完成
   } finally {
     generating.value = false
-    generateProgress.value = ''
-    generateStartTime.value = null
+    // 不再重置 generateProgress 和其他状态，保留显示
   }
+}
+
+// 清除进度显示
+const clearProgress = () => {
+  generateCompleted.value = false
+  generateProgress.value = ''
+  generateStartTime.value = null
+  result.value = ''
+  queryDetails.value = null
 }
 </script>
 
@@ -328,5 +355,36 @@ const generateRecord = async () => {
   opacity: 0.8;
   font-style: italic;
   margin-top: 8px;
+}
+
+.progress-result {
+  font-size: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  margin-top: 8px;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.progress-actions {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.clear-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 </style>

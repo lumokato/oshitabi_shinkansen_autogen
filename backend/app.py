@@ -158,11 +158,23 @@ def check_riding_record():
 def generate_riding_record_api():
     """生成单个账号的乘车记录"""
     try:
+        print(f"📥 收到生成请求")
         data = request.get_json()
+        print(f"📋 请求数据: {data}")
+
+        if data is None:
+            print("❌ 请求数据为空")
+            return jsonify({
+                'success': False,
+                'message': '请求数据为空'
+            }), 400
+
         username = data.get('username')
         password = data.get('password')
-        
+        print(f"👤 用户名: {username}, 密码长度: {len(password) if password else 0}")
+
         if not username or not password:
+            print(f"❌ 用户名或密码为空: username={username}, password={'有' if password else '无'}")
             return jsonify({
                 'success': False,
                 'message': '用户名和密码不能为空'
@@ -170,6 +182,7 @@ def generate_riding_record_api():
         
         # 调用headless_automation.py中的生成功能
         print(f"🚀 开始为用户 {username} 生成乘车记录...")
+        print(f"🔧 生成功能状态: GENERATION_AVAILABLE={GENERATION_AVAILABLE}, generate_riding_record={generate_riding_record is not None}")
 
         if GENERATION_AVAILABLE and generate_riding_record:
             result = generate_riding_record(username, password)
@@ -277,6 +290,7 @@ def get_accounts():
 
             account_info = {
                 'username': username,
+                'password': account.get('password', ''),  # 添加密码字段用于生成功能
                 'displayName': account.get('display_name', username),
                 'enabled': account.get('enabled', True),
                 'hasRecord': has_record,

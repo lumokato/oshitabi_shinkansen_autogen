@@ -27,6 +27,7 @@
             <th>有效期限</th>
             <th>记录状态</th>
             <th>最后检查</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -55,6 +56,27 @@
               <span v-else>-</span>
             </td>
             <td>{{ formatDate(account.lastCheck) }}</td>
+            <td class="action-cell">
+              <button
+                @click="generateRecord(account)"
+                :disabled="account.generating || !account.enabled"
+                class="generate-btn"
+                :class="{ 'generating': account.generating }"
+              >
+                {{ account.generating ? '生成中...' : '一键生成' }}
+              </button>
+              <div v-if="account.generating" class="mini-progress">
+                {{ account.generateProgress || '准备中...' }}
+              </div>
+              <div v-if="account.generateResult"
+                   class="generate-result"
+                   :class="{
+                     'result-success': account.generateResult.includes('成功'),
+                     'result-error': account.generateResult.includes('失败')
+                   }">
+                {{ account.generateResult }}
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -71,6 +93,7 @@
 <script setup>
 import { ref } from 'vue'
 import { getAccounts, checkAllAccountsRecords } from '../api/admin.js'
+import { generateRidingRecord } from '../api/ridingRecord.js'
 
 const loading = ref(false)
 const accounts = ref([])
@@ -82,7 +105,13 @@ const loadAccounts = async () => {
 
   try {
     const response = await getAccounts()
-    accounts.value = response.accounts || []
+    // 初始化每个账号的生成状态
+    accounts.value = (response.accounts || []).map(account => ({
+      ...account,
+      generating: false,
+      generateProgress: '',
+      generateResult: ''
+    }))
   } catch (err) {
     error.value = `加载失败: ${err.message}`
   } finally {
@@ -96,8 +125,17 @@ const checkAllAccounts = async () => {
 
   try {
     const response = await checkAllAccountsRecords()
-    // 更新账号列表，包含最新的检查结果
-    accounts.value = response.accounts || []
+    // 更新账号列表，包含最新的检查结果，保持生成状态
+    const newAccounts = response.accounts || []
+    accounts.value = newAccounts.map(newAccount => {
+      const existingAccount = accounts.value.find(acc => acc.username === newAccount.username)
+      return {
+        ...newAccount,
+        generating: existingAccount?.generating || false,
+        generateProgress: existingAccount?.generateProgress || '',
+        generateResult: existingAccount?.generateResult || ''
+      }
+    })
   } catch (err) {
     error.value = `检查失败: ${err.message}`
   } finally {
@@ -119,6 +157,63 @@ const getRecordStatusText = (hasRecord) => {
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleString('zh-CN')
+}
+
+// 生成记录函数
+const generateRecord = async (account) => {
+  if (!account.enabled) {
+    return
+  }
+
+  // 设置生成状态
+  account.generating = true
+  account.generateProgress = ''
+  account.generateResult = ''
+
+  // 模拟进度更新
+  const progressSteps = [
+    '🌐 启动无头浏览器...',
+    '🔑 执行登录...',
+    '🚀 执行自动化脚本...',
+    '📝 填写问卷...',
+    '✅ 完成生成...'
+  ]
+
+  let stepIndex = 0
+  const progressInterval = setInterval(() => {
+    if (stepIndex < progressSteps.length && account.generating) {
+      account.generateProgress = progressSteps[stepIndex]
+      stepIndex++
+    }
+  }, 15000) // 每15秒更新一次进度
+
+  try {
+    const response = await generateRidingRecord(account.username, account.password)
+    clearInterval(progressInterval)
+
+    if (response.success) {
+      account.generateResult = '🎉 生成成功！'
+      account.generateProgress = '✅ 生成完成'
+
+      // 生成成功后自动刷新账号列表
+      setTimeout(() => {
+        loadAccounts()
+      }, 2000)
+    } else {
+      account.generateResult = `❌ 生成失败: ${response.message}`
+    }
+  } catch (error) {
+    clearInterval(progressInterval)
+    account.generateResult = `❌ 生成失败: ${error.message}`
+  } finally {
+    account.generating = false
+
+    // 5秒后清除结果显示
+    setTimeout(() => {
+      account.generateResult = ''
+      account.generateProgress = ''
+    }, 5000)
+  }
 }
 
 // 组件挂载时自动加载账号列表
@@ -271,5 +366,80 @@ tr:hover {
 .admin-error p {
   color: #721c24;
   margin: 0;
+}
+
+/* 操作列样式 */
+.action-cell {
+  min-width: 120px;
+  text-align: center;
+}
+
+.generate-btn {
+  background: #18a058;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: #16a085;
+  transform: translateY(-1px);
+}
+
+.generate-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generate-btn.generating {
+  background: #f39c12;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.mini-progress {
+  font-size: 10px;
+  color: #666;
+  margin-top: 4px;
+  padding: 2px 4px;
+  background: #f8f9fa;
+  border-radius: 3px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generate-result {
+  font-size: 10px;
+  margin-top: 4px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 成功和失败的样式 */
+.result-success {
+  background: #d4edda !important;
+  color: #155724 !important;
+}
+
+.result-error {
+  background: #f8d7da !important;
+  color: #721c24 !important;
 }
 </style>

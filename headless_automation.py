@@ -50,30 +50,58 @@ class HeadlessAutomation:
             options.add_argument(f"--user-data-dir={self.temp_dir}")
             options.add_argument("--remote-debugging-port=9225")
             
-            # 启动Chromium浏览器（明确指定ChromeDriver路径）
+            # 启动Chrome浏览器
             from selenium.webdriver.chrome.service import Service
 
-            # 尝试不同的ChromeDriver路径
-            chromedriver_paths = [
-                '/usr/bin/chromedriver',
-                '/usr/local/bin/chromedriver',
-                'chromedriver'
-            ]
+            # 尝试多种ChromeDriver获取方式
+            driver_created = False
 
-            service = None
-            for path in chromedriver_paths:
+            # 方案1: 使用webdriver-manager（如果网络可用）
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+                service = Service(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=options)
+                print("✅ 使用 webdriver-manager 自动管理的 ChromeDriver")
+                driver_created = True
+            except Exception as e:
+                print(f"⚠️ webdriver-manager 失败: {e}")
+
+            # 方案2: 使用系统路径（Linux/Docker环境）
+            if not driver_created:
+                chromedriver_paths = ['/usr/bin/chromedriver', '/usr/local/bin/chromedriver']
+                for path in chromedriver_paths:
+                    try:
+                        service = Service(executable_path=path)
+                        self.driver = webdriver.Chrome(service=service, options=options)
+                        print(f"✅ 使用系统路径: {path}")
+                        driver_created = True
+                        break
+                    except Exception as e:
+                        print(f"⚠️ 系统路径 {path} 失败: {e}")
+                        continue
+
+            # 方案3: 使用默认ChromeDriver（依赖PATH环境变量）
+            if not driver_created:
                 try:
-                    service = Service(executable_path=path)
-                    break
-                except:
-                    continue
+                    service = Service()
+                    self.driver = webdriver.Chrome(service=service, options=options)
+                    print("✅ 使用默认 ChromeDriver")
+                    driver_created = True
+                except Exception as e:
+                    print(f"⚠️ 默认 ChromeDriver 失败: {e}")
 
-            if service is None:
-                # 如果找不到ChromeDriver，尝试使用系统默认
-                service = Service()
+            # 方案4: 尝试不指定service（让Selenium自动处理）
+            if not driver_created:
+                try:
+                    self.driver = webdriver.Chrome(options=options)
+                    print("✅ 使用 Selenium 自动管理的 ChromeDriver")
+                    driver_created = True
+                except Exception as e:
+                    print(f"⚠️ Selenium 自动管理失败: {e}")
 
-            self.driver = webdriver.Chrome(service=service, options=options)
-            print("✅ 使用 Chromium")
+            if not driver_created:
+                raise Exception("所有ChromeDriver获取方式都失败了")
+
 
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             print(f"✅ 无头浏览器启动成功")

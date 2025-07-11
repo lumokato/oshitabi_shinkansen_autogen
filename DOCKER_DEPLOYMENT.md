@@ -124,10 +124,7 @@ nano accounts_config.json
 # 进入容器
 docker exec -it tokaido-automation bash
 
-# 在容器内运行调试脚本
-python debug-generation.py
-
-# 或手动测试各个组件
+# 手动测试各个组件
 chromium --version
 chromedriver --version
 python -c "from headless_automation import HeadlessAutomation; print('OK')"
