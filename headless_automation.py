@@ -50,8 +50,29 @@ class HeadlessAutomation:
             options.add_argument(f"--user-data-dir={self.temp_dir}")
             options.add_argument("--remote-debugging-port=9225")
             
-            # 启动Chromium浏览器
-            self.driver = webdriver.Chrome(options=options)
+            # 启动Chromium浏览器（明确指定ChromeDriver路径）
+            from selenium.webdriver.chrome.service import Service
+
+            # 尝试不同的ChromeDriver路径
+            chromedriver_paths = [
+                '/usr/bin/chromedriver',
+                '/usr/local/bin/chromedriver',
+                'chromedriver'
+            ]
+
+            service = None
+            for path in chromedriver_paths:
+                try:
+                    service = Service(executable_path=path)
+                    break
+                except:
+                    continue
+
+            if service is None:
+                # 如果找不到ChromeDriver，尝试使用系统默认
+                service = Service()
+
+            self.driver = webdriver.Chrome(service=service, options=options)
             print("✅ 使用 Chromium")
 
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")

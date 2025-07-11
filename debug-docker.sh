@@ -159,9 +159,22 @@ show_menu() {
     echo "4. 检查浏览器环境"
     echo "5. 查看错误日志"
     echo "6. 监控资源使用"
-    echo "7. 重启容器"
-    echo "8. 退出"
+    echo "7. 修复ARM64 Selenium问题"
+    echo "8. 重启容器"
+    echo "9. 退出"
     echo ""
+}
+
+# 修复ARM64 Selenium问题
+fix_arm64_selenium() {
+    echo -e "${YELLOW}🔧 修复ARM64 Selenium问题...${NC}"
+
+    echo "正在容器内运行ARM64修复脚本..."
+    docker exec tokaido-automation python fix-arm64-selenium.py
+
+    echo ""
+    echo "正在测试修复结果..."
+    docker exec tokaido-automation python debug-generation.py
 }
 
 # 重启容器
@@ -176,7 +189,7 @@ main() {
     
     while true; do
         show_menu
-        read -p "请输入选项 (1-8): " choice
+        read -p "请输入选项 (1-9): " choice
         
         case $choice in
             1)
@@ -198,9 +211,12 @@ main() {
                 monitor_resources
                 ;;
             7)
-                restart_container
+                fix_arm64_selenium
                 ;;
             8)
+                restart_container
+                ;;
+            9)
                 echo -e "${GREEN}👋 调试结束${NC}"
                 exit 0
                 ;;

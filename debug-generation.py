@@ -41,16 +41,38 @@ def test_browser_setup():
     try:
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
-        
+        from selenium.webdriver.chrome.service import Service
+
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=1920,1080')
-        
+
+        # 尝试不同的ChromeDriver路径
+        chromedriver_paths = [
+            '/usr/bin/chromedriver',
+            '/usr/local/bin/chromedriver',
+            'chromedriver'
+        ]
+
+        service = None
+        for path in chromedriver_paths:
+            try:
+                if os.path.exists(path):
+                    service = Service(executable_path=path)
+                    print(f"找到ChromeDriver: {path}")
+                    break
+            except:
+                continue
+
+        if service is None:
+            print("使用默认ChromeDriver路径")
+            service = Service()
+
         print("正在启动浏览器...")
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(service=service, options=options)
         
         print("正在访问测试页面...")
         driver.get("https://www.google.com")

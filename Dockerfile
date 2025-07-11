@@ -18,10 +18,16 @@ RUN apt-get update && apt-get install -y \
     chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
+# 确保ChromeDriver在标准路径
+RUN ln -sf /usr/bin/chromedriver /usr/local/bin/chromedriver
+
 # 验证安装
 RUN echo "验证浏览器安装..." \
     && chromium --version \
     && chromedriver --version \
+    && echo "ChromeDriver路径:" \
+    && which chromedriver \
+    && ls -la /usr/bin/chromedriver /usr/local/bin/chromedriver \
     && echo "浏览器验证完成"
 
 # 复制Python依赖文件
