@@ -111,30 +111,39 @@ def check_riding_record():
                 'message': '用户名和密码不能为空'
             }), 400
         
-        # 创建管理器实例进行单次查询并更新结果文件
-        temp_manager = MultiAccountRidingRecordManager(CONFIG_FILE)
-        temp_manager.accounts = {
-            username: {
-                'username': username,
-                'password': password,
-                'display_name': username,
-                'enabled': True
-            }
-        }
+        # 获取管理器实例
+        manager = get_manager()
 
-        has_record, record_info = temp_manager.check_riding_record_for_user_force_login(username)
+        # 检查用户是否已在配置中
+        user_exists = username in manager.accounts
+
+        # 如果用户不存在，添加到配置中
+        if not user_exists:
+            print(f"🔍 用户 {username} 不在配置中，准备添加...")
+            manager.add_account(username, password, username, True)
+        else:
+            # 如果用户存在，更新密码（可能已更改）
+            manager.accounts[username]['password'] = password
+            print(f"🔄 更新用户 {username} 的密码")
+
+        has_record, record_info = manager.check_riding_record_for_user_force_login(username)
 
         # 更新结果到文件
         if has_record and isinstance(record_info, dict):
-            temp_manager.update_single_user_result(username, record_info)
+            manager.update_single_user_result(username, record_info)
 
         result = {
             'hasRecord': has_record,
-            'message': '查询成功' if has_record else '暂无乘车记录'
+            'message': '查询成功' if has_record else '暂无乘车记录',
+            'userSaved': not user_exists  # 标识是否为新保存的用户
         }
 
         if has_record and isinstance(record_info, dict) and 'riding_record_details' in record_info:
             result['details'] = record_info['riding_record_details']
+
+        # 如果是新用户，添加提示信息
+        if not user_exists:
+            result['message'] += f' (用户 {username} 已保存到配置文件)'
         
         return jsonify(result)
         

@@ -88,33 +88,78 @@ nano accounts_config.json
 
 ## 🌐 GitHub Container Registry
 
-### 推送镜像到 GHCR
+### 本地构建和使用
 
-1. 登录到 GitHub Container Registry：
-
-```bash
-echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
-```
-
-2. 构建并推送镜像：
+项目使用本地构建方式，无需外部镜像仓库：
 
 ```bash
-docker build -t ghcr.io/username/tokaido-automation:latest .
-docker push ghcr.io/username/tokaido-automation:latest
+# 构建镜像
+./deploy.sh build
+
+# 启动服务
+./deploy.sh start
 ```
 
-### 使用预构建镜像
+### Docker调试方案
 
-修改 `docker-compose.yml` 中的镜像地址：
+当一键生成记录功能出现问题时，可以使用以下调试工具：
 
-```yaml
-services:
-  tokaido-automation:
-    image: ghcr.io/username/tokaido-automation:latest
-    # 注释掉 build 部分
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+#### 1. 交互式调试工具
+
+```bash
+# 启动调试菜单
+./debug-docker.sh
+
+# 或直接执行特定调试功能
+./debug-docker.sh logs      # 查看实时日志
+./debug-docker.sh enter     # 进入容器调试
+./debug-docker.sh test      # 测试生成API
+./debug-docker.sh browser   # 检查浏览器环境
+./debug-docker.sh errors    # 查看错误日志
+```
+
+#### 2. 进入容器手动调试
+
+```bash
+# 进入容器
+docker exec -it tokaido-automation bash
+
+# 在容器内运行调试脚本
+python debug-generation.py
+
+# 或手动测试各个组件
+chromium --version
+chromedriver --version
+python -c "from headless_automation import HeadlessAutomation; print('OK')"
+```
+
+#### 3. 常见问题排查
+
+**浏览器问题：**
+```bash
+# 检查浏览器是否正常
+docker exec tokaido-automation chromium --headless --no-sandbox --dump-dom https://www.google.com
+
+# 检查ChromeDriver
+docker exec tokaido-automation chromedriver --version
+```
+
+**内存问题：**
+```bash
+# 监控资源使用
+./debug-docker.sh monitor
+
+# 检查内存使用
+docker stats tokaido-automation
+```
+
+**网络问题：**
+```bash
+# 测试网络连接
+docker exec tokaido-automation curl -I https://orange-system.jr-central.co.jp
+
+# 检查DNS解析
+docker exec tokaido-automation nslookup oshi-tabi.voistock.com
 ```
 
 ## 🔧 常用命令

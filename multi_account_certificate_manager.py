@@ -85,10 +85,40 @@ class MultiAccountRidingRecordManager:
         except Exception as e:
             print(f"❌ 加载账号配置失败: {e}")
             return
-    
 
+    def save_accounts_config(self):
+        """保存账号配置文件"""
+        try:
+            config = {
+                'accounts': self.accounts
+            }
 
-    
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, ensure_ascii=False, indent=4)
+
+            print(f"✅ 配置文件已保存: {self.config_file}")
+            return True
+
+        except Exception as e:
+            print(f"❌ 保存配置文件失败: {e}")
+            return False
+
+    def add_account(self, username, password, display_name=None, enabled=True):
+        """添加新账号到配置"""
+        if username in self.accounts:
+            print(f"⚠️ 账号 {username} 已存在，跳过添加")
+            return False
+
+        self.accounts[username] = {
+            'username': username,
+            'password': password,
+            'display_name': display_name or username,
+            'enabled': enabled
+        }
+
+        print(f"✅ 已添加新账号: {display_name or username} ({username})")
+        return self.save_accounts_config()
+
     def perform_login_and_get_cookie(self, username):
         """执行登录并获取cookie"""
         try:

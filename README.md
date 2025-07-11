@@ -162,9 +162,16 @@ docker run -d \
   ghcr.io/your-username/tokaido-automation:latest
 ```
 
-### 自动构建
+### 手动构建
 
-项目配置了GitHub Actions，推送到main分支时自动构建并推送到GHCR。
+可以手动构建Docker镜像：
+```bash
+# 本地构建
+./deploy.sh build
+
+# 或使用docker-compose
+docker-compose build
+```
 
 ## 📖 API文档
 

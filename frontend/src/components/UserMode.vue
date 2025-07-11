@@ -92,7 +92,16 @@ const checkRecord = async () => {
 
   try {
     const response = await checkRidingRecord(username.value, password.value)
-    result.value = response.hasRecord ? '✅ 已有乘车记录' : '❌ 暂无乘车记录'
+
+    // 构建结果消息
+    let message = response.hasRecord ? '✅ 已有乘车记录' : '❌ 暂无乘车记录'
+
+    // 如果是新保存的用户，添加提示
+    if (response.userSaved) {
+      message += '\n💾 用户信息已保存到配置文件'
+    }
+
+    result.value = message
 
     // 保存详细信息
     if (response.hasRecord && response.details) {
